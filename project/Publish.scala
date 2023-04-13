@@ -27,7 +27,7 @@
 
 import sbt.Keys._
 import sbt._
-import sbtrelease.ReleasePlugin.autoImport.{releaseProcess, ReleaseStep}
+import sbtrelease.ReleasePlugin.autoImport.{ReleaseStep, releaseCrossBuild, releaseProcess}
 import sbtrelease.ReleaseStateTransformations._
 
 object Publish {
@@ -36,6 +36,7 @@ object Publish {
     Seq(
       publishTo := Some(realm at githubUrl),
       publishMavenStyle := true,
+      releaseCrossBuild := true,
       releaseProcess := Seq[ReleaseStep](
         checkSnapshotDependencies, // : ReleaseStep
         inquireVersions, // : ReleaseStep
