@@ -52,7 +52,7 @@ lazy val commonSettings = Seq(
   organization := "com.audiense",
 
   scalaVersion := "2.13.10",
-  crossScalaVersions := Seq(scalaVersion.value, "2.11.12", "2.12.14"),
+  crossScalaVersions := Seq(scalaVersion.value, "2.12.14"),
   scalacOptions += "-Yrangepos",
 
   scalacOptions in (Compile, doc) ++= Seq(
