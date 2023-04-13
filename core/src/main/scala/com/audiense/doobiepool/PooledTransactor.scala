@@ -1,4 +1,4 @@
-package io.chrisdavenport.doobiepool
+package com.audiense.doobiepool
 
 import cats.implicits._
 import cats.effect._

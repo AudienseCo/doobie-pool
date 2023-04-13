@@ -1,4 +1,4 @@
-package io.chrisdavenport.doobiepool
+package com.audiense.doobiepool
 
 import cats.effect._
 import cats.effect.concurrent._
