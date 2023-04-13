@@ -2,11 +2,11 @@ import sbtcrossproject.CrossPlugin.autoImport.{crossProject, CrossType}
 
 lazy val `doobie-pool` = project.in(file("."))
   .disablePlugins(MimaPlugin)
-  .settings(commonSettings, skipOnPublishSettings)
+  .settings(commonSettings)
   .aggregate(core)
 
 lazy val core = project.in(file("core"))
-  .settings(commonSettings, mimaSettings)
+  .settings(commonSettings ++ Publish.createPublisherSettings(githubUrl), mimaSettings)
   .settings(
     name := "doobie-pool"
   )
@@ -72,7 +72,7 @@ lazy val commonSettings = Seq(
     "org.specs2"                  %% "specs2-core"                % specs2V       % Test,
     "org.specs2"                  %% "specs2-scalacheck"          % specs2V       % Test
   )
-) ++ Publish.createPublisherSettings(githubUrl) ++ CredentialsManager.githubCredentials
+)  ++ CredentialsManager.githubCredentials
 
 lazy val mimaSettings = {
   import sbtrelease.Version
