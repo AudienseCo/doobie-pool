@@ -24,9 +24,10 @@ jobs:
           git config --local user.email "dataeng@audiense.com"
           git config --local user.name "GitHub Action DataEng"
           git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
-      #        git config remote.origin.fetch +refs/heads/*:refs/remotes/origin/*
-      - name: Compile
-        run: sbt +compile
+          #        git config remote.origin.fetch +refs/heads/*:refs/remotes/origin/*
+
+      - name: Run tests
+        run: sbt +test
       - name: Release
         run: GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }} sbt -v "release cross with-defaults"
       - name: Push new version
