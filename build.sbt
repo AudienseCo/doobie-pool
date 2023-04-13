@@ -2,8 +2,8 @@ import sbtcrossproject.CrossPlugin.autoImport.{crossProject, CrossType}
 
 lazy val `doobie-pool` = project.in(file("."))
   .disablePlugins(MimaPlugin)
-  .settings(commonSettings)
-  .aggregate(core/*, docs*/)
+  .settings(commonSettings, skipOnPublishSettings)
+  .aggregate(core)
 
 lazy val core = project.in(file("core"))
   .settings(commonSettings, mimaSettings)
@@ -11,13 +11,6 @@ lazy val core = project.in(file("core"))
     name := "doobie-pool"
   )
 
-/*lazy val docs = project.in(file("docs"))
-  .disablePlugins(MimaPlugin)
-  .settings(commonSettings, skipOnPublishSettings, micrositeSettings)
-  .dependsOn(core)
-  .enablePlugins(MicrositesPlugin)
-  .enablePlugins(TutPlugin)
-*/
 lazy val contributors = Seq(
   "ChristopherDavenport" -> "Christopher Davenport"
 )
@@ -135,3 +128,11 @@ lazy val mimaSettings = {
     }
   )
 }
+
+lazy val skipOnPublishSettings = Seq(
+  skip in publish := true,
+  publish := (()),
+  publishLocal := (()),
+  publishArtifact := false,
+  publishTo := None
+)
