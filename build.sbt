@@ -45,9 +45,11 @@ val specs2V = "4.7.1"
 val kindProjectorV = "0.10.3"
 val betterMonadicForV = "0.3.1"
 
+val githubUrl = "https://maven.pkg.github.com/audienseco/doobie-pool"
+
 // General Settings
 lazy val commonSettings = Seq(
-  organization := "io.chrisdavenport",
+  organization := "com.audiense",
 
   scalaVersion := "2.13.10",
   crossScalaVersions := Seq(scalaVersion.value, "2.11.12", "2.12.14"),
@@ -77,7 +79,7 @@ lazy val commonSettings = Seq(
     "org.specs2"                  %% "specs2-core"                % specs2V       % Test,
     "org.specs2"                  %% "specs2-scalacheck"          % specs2V       % Test
   )
-)
+) ++ Publish.createPublisherSettings(githubUrl) ++ CredentialsManager.githubCredentials
 
 lazy val releaseSettings = {
   import ReleaseTransformations._
