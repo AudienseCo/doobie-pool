@@ -3,7 +3,7 @@ import sbtcrossproject.CrossPlugin.autoImport.{crossProject, CrossType}
 lazy val `doobie-pool` = project.in(file("."))
   .disablePlugins(MimaPlugin)
   .settings(commonSettings, releaseSettings, skipOnPublishSettings)
-  .aggregate(core, docs)
+  .aggregate(core/*, docs*/)
 
 lazy val core = project.in(file("core"))
   .settings(commonSettings, releaseSettings, mimaSettings)
@@ -11,26 +11,26 @@ lazy val core = project.in(file("core"))
     name := "doobie-pool"
   )
 
-lazy val docs = project.in(file("docs"))
+/*lazy val docs = project.in(file("docs"))
   .disablePlugins(MimaPlugin)
   .settings(commonSettings, skipOnPublishSettings, micrositeSettings)
   .dependsOn(core)
   .enablePlugins(MicrositesPlugin)
   .enablePlugins(TutPlugin)
-
+*/
 lazy val contributors = Seq(
   "ChristopherDavenport" -> "Christopher Davenport"
 )
 
-val catsV = "1.6.1"
+val catsV = "2.0.0"
 val kittensV = "1.2.0"
-val catsEffectV = "1.4.0"
+val catsEffectV = "2.0.0"
 val mouseV = "0.20"
 val shapelessV = "2.3.7"
-val fs2V = "1.0.5"
+val fs2V = "2.0.0"
 val http4sV = "0.20.0"
 val circeV = "0.11.1"
-val doobieV = "0.7.1"
+val doobieV = "0.8.8"
 val pureConfigV = "0.10.2"
 val refinedV = "0.9.3"
 
@@ -49,8 +49,8 @@ val betterMonadicForV = "0.3.1"
 lazy val commonSettings = Seq(
   organization := "io.chrisdavenport",
 
-  scalaVersion := "2.12.14",
-  crossScalaVersions := Seq(scalaVersion.value, "2.11.12"),
+  scalaVersion := "2.13.10",
+  crossScalaVersions := Seq(scalaVersion.value, "2.11.12", "2.12.14"),
   scalacOptions += "-Yrangepos",
 
   scalacOptions in (Compile, doc) ++= Seq(
@@ -71,7 +71,7 @@ lazy val commonSettings = Seq(
     "co.fs2"                      %% "fs2-io"                     % fs2V,
 
     "org.tpolecat"                %% "doobie-core"                % doobieV,
-    "io.chrisdavenport"           %% "keypool"                    % "0.1.0",
+    "io.chrisdavenport"           %% "keypool"                    % "0.2.0",
 
     "com.h2database"              % "h2"                          % "1.4.200"     % Test,
     "org.specs2"                  %% "specs2-core"                % specs2V       % Test,
@@ -155,7 +155,7 @@ lazy val mimaSettings = {
     val minorVersions : List[Int] =
       if (major >= 1) Range(0, minor).inclusive.toList
       else List(minor)
-    def patchVersions(currentMinVersion: Int): List[Int] = 
+    def patchVersions(currentMinVersion: Int): List[Int] =
       if (minor == 0 && patch == 0) List.empty[Int]
       else if (currentMinVersion != minor) List(0)
       else Range(0, patch - 1).inclusive.toList
@@ -188,7 +188,7 @@ lazy val mimaSettings = {
     mimaFailOnProblem := mimaVersions(version.value).toList.headOption.isDefined,
     mimaPreviousArtifacts := (mimaVersions(version.value) ++ extraVersions)
       .filterNot(excludedVersions.contains(_))
-      .map{v => 
+      .map{v =>
         val moduleN = moduleName.value + "_" + scalaBinaryVersion.value.toString
         organization.value % moduleN % v
       },
@@ -197,48 +197,6 @@ lazy val mimaSettings = {
       import com.typesafe.tools.mima.core.ProblemFilters._
       Seq()
     }
-  )
-}
-
-lazy val micrositeSettings = {
-  import microsites._
-  Seq(
-    micrositeName := "doobie-pool",
-    micrositeDescription := "Database Connection Pool",
-    micrositeAuthor := "Christopher Davenport",
-    micrositeGithubOwner := "ChristopherDavenport",
-    micrositeGithubRepo := "doobie-pool",
-    micrositeBaseUrl := "/doobie-pool",
-    micrositeDocumentationUrl := "https://www.javadoc.io/doc/io.chrisdavenport/doobie-pool_2.12",
-    micrositeFooterText := None,
-    micrositeHighlightTheme := "atom-one-light",
-    micrositePalette := Map(
-      "brand-primary" -> "#3e5b95",
-      "brand-secondary" -> "#294066",
-      "brand-tertiary" -> "#2d5799",
-      "gray-dark" -> "#49494B",
-      "gray" -> "#7B7B7E",
-      "gray-light" -> "#E5E5E6",
-      "gray-lighter" -> "#F4F3F4",
-      "white-color" -> "#FFFFFF"
-    ),
-    fork in tut := true,
-    scalacOptions in Tut --= Seq(
-      "-Xfatal-warnings",
-      "-Ywarn-unused-import",
-      "-Ywarn-numeric-widen",
-      "-Ywarn-dead-code",
-      "-Ywarn-unused:imports",
-      "-Xlint:-missing-interpolator,_"
-    ),
-    libraryDependencies += "com.47deg" %% "github4s" % "0.20.1",
-    micrositePushSiteWith := GitHub4s,
-    micrositeGithubToken := sys.env.get("GITHUB_TOKEN"),
-    micrositeExtraMdFiles := Map(
-        file("CHANGELOG.md")        -> ExtraMdFileConfig("changelog.md", "page", Map("title" -> "changelog", "section" -> "changelog", "position" -> "100")),
-        file("CODE_OF_CONDUCT.md")  -> ExtraMdFileConfig("code-of-conduct.md",   "page", Map("title" -> "code of conduct",   "section" -> "code of conduct",   "position" -> "101")),
-        file("LICENSE")             -> ExtraMdFileConfig("license.md",   "page", Map("title" -> "license",   "section" -> "license",   "position" -> "102"))
-    )
   )
 }
 

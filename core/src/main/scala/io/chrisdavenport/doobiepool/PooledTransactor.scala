@@ -2,6 +2,7 @@ package io.chrisdavenport.doobiepool
 
 import cats.implicits._
 import cats.effect._
+import io.chrisdavenport.keypool.Reusable.Reuse
 // import cats.effect.concurrent._
 import doobie.KleisliInterpreter
 import doobie.util.transactor.Transactor
@@ -18,10 +19,10 @@ object PooledTransactor {
    * Create a Transactor
    */
   def apply[F[_]: Concurrent: ContextShift](
-    pool: KeyPool[F, Unit, Connection],
-    maxConnectionsActive: Int,
-    transactEC: ExecutionContext
-  ): F[Transactor[F]] =
+                                             pool: KeyPool[F, Unit, Connection],
+                                             maxConnectionsActive: Int,
+                                             transactEC: ExecutionContext
+                                           ): F[Transactor[F]] =
     Semaphore[F](maxConnectionsActive.toLong)
       .map(impl(pool, _, transactEC))
 
@@ -29,47 +30,52 @@ object PooledTransactor {
    * Create a Transactor with an Externally Inspectable/Controllable Semaphore
    */
   def impl[F[_]: Concurrent: ContextShift](
-    pool: KeyPool[F, Unit, Connection],
-    activeConnections: Semaphore[F],
-    transactEC: ExecutionContext
-  ): Transactor[F] = Transactor(
+                                            pool: KeyPool[F, Unit, Connection],
+                                            activeConnections: Semaphore[F],
+                                            transactEC: ExecutionContext
+                                          ): Transactor[F] = Transactor(
     pool,
     {p: KeyPool[F, Unit, Connection] =>
       Resource.make(activeConnections.acquire)(_ => activeConnections.release) >>
-      p.take(()).map(_.resource)
+        p.take(()).map(_.value)
     },
-    KleisliInterpreter[F](transactEC).ConnectionInterpreter,
+    KleisliInterpreter[F](Blocker.liftExecutionContext(transactEC)).ConnectionInterpreter,
     Strategy.default
   )
 
   private def create[F[_]: Concurrent: Timer : ContextShift](
-    driver: String,
-    conn: () => Connection,
-    maxConnectionsInPool: Int,
-    connectEC:  ExecutionContext
-  ): Resource[F, KeyPool[F, Unit, Connection]] = KeyPool.create[F, Unit, Connection](
-    {_: Unit =>
+                                                              driver: String,
+                                                              conn: () => Connection,
+                                                              maxConnectionsInPool: Int,
+                                                              connectEC:  ExecutionContext
+                                                            ): Resource[F, KeyPool[F, Unit, Connection]] = {
+    KeyPoolBuilder({ _: Unit =>
       ContextShift[F].evalOn(connectEC)(
-        Sync[F].delay { Class.forName(driver); conn() }
-      )},
-    { case (_, conn) =>
-      ContextShift[F].evalOn(connectEC)(Sync[F].delay { conn.close() })},
-    Reuse,
-    Long.MaxValue,
-    maxConnectionsInPool,
-    maxConnectionsInPool,
-    {_: Throwable => Sync[F].unit}
-  )
+        Sync[F].delay {
+          Class.forName(driver); conn()
+        }
+      )
+    },
+      { (conn:Connection) =>
+        ContextShift[F].evalOn(connectEC)(Sync[F].delay {
+          conn.close()
+        })
+      })
+      .withDefaultReuseState(Reuse)
+      .withMaxPerKey((_) => Int.MaxValue)
+      .withMaxTotal(maxConnectionsInPool).withOnReaperException({ _: Throwable => Sync[F].unit })
+      .build
+  }
 
   /**
    * Build a Pool of Connections, using the url.
    */
   def pool[F[_]: Concurrent: Timer: ContextShift](
-    driver: String,
-    url:    String,
-    maxConnectionsInPool: Int,
-    connectEC:  ExecutionContext
-  ): Resource[F, KeyPool[F, Unit, Connection]] =
+                                                   driver: String,
+                                                   url:    String,
+                                                   maxConnectionsInPool: Int,
+                                                   connectEC:  ExecutionContext
+                                                 ): Resource[F, KeyPool[F, Unit, Connection]] =
     create[F](
       driver,
       () => DriverManager.getConnection(url),
@@ -81,13 +87,13 @@ object PooledTransactor {
    * Build a Pool of Connections, using the url, user, and password.
    */
   def pool[F[_]: Concurrent: Timer: ContextShift](
-    driver: String,
-    url:    String,
-    user:   String,
-    pass: String,
-    maxConnectionsInPool: Int,
-    connectEC:  ExecutionContext
-  ): Resource[F, KeyPool[F, Unit, Connection]] =
+                                                   driver: String,
+                                                   url:    String,
+                                                   user:   String,
+                                                   pass: String,
+                                                   maxConnectionsInPool: Int,
+                                                   connectEC:  ExecutionContext
+                                                 ): Resource[F, KeyPool[F, Unit, Connection]] =
     create[F](
       driver,
       () => DriverManager.getConnection(url, user, pass),
@@ -99,12 +105,12 @@ object PooledTransactor {
    * Build a Pool of Connections, using the url and connection info.
    */
   def pool[F[_]: Concurrent: Timer: ContextShift](
-    driver: String,
-    url:    String,
-    info: java.util.Properties,
-    maxConnectionsInPool: Int,
-    connectEC:  ExecutionContext
-  ): Resource[F, KeyPool[F, Unit, Connection]] =
+                                                   driver: String,
+                                                   url:    String,
+                                                   info: java.util.Properties,
+                                                   maxConnectionsInPool: Int,
+                                                   connectEC:  ExecutionContext
+                                                 ): Resource[F, KeyPool[F, Unit, Connection]] =
     create[F](
       driver,
       () => DriverManager.getConnection(url, info),

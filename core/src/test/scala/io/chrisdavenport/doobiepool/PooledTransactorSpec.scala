@@ -31,7 +31,7 @@ class PooledTransactorSpec extends Specification {
   "PooledTransactor" should {
 
     "support cats.effect.IO" in {
-      xa[IO].use(sql"select 42".query[Int].unique.transact(_)).unsafeRunSync must_=== 42
+      xa[IO].use(sql"select 42".query[Int].unique.transact(_)).unsafeRunSync() must_=== 42
     }
 
   }
@@ -40,7 +40,7 @@ class PooledTransactorSpec extends Specification {
   class ConnectionTracker {
     var connections = List.empty[java.sql.Connection]
 
-    def track[F[_]: Async: ContextShift](xa: Transactor[F]) = {
+    def track[F[_]: Async](xa: Transactor[F]) = {
       def withA(t: doobie.util.transactor.Transactor[F]): Transactor.Aux[F, t.A] = {
         Transactor.connect.modify(t, f => a => {
           f(a).map { conn =>
@@ -58,14 +58,14 @@ class PooledTransactorSpec extends Specification {
     "Connection.close should be called on success" in {
       val tracker = new ConnectionTracker
       val transactor: Resource[IO, Transactor[IO]] = xa[IO].map(tracker.track[IO](_))
-      transactor.use(t => sql"select 1".query[Int].unique.transact(t)).unsafeRunSync
+      transactor.use(t => sql"select 1".query[Int].unique.transact(t)).unsafeRunSync()
       tracker.connections.map(_.isClosed) must_== List(true)
     }
 
     "Connection.close should be called on failure" in {
       val tracker = new ConnectionTracker
       val transactor = xa[IO].map(tracker.track[IO](_))
-      transactor.use(t => sql"abc".query[Int].unique.transact(t).attempt).unsafeRunSync.toOption must_== None
+      transactor.use(t => sql"abc".query[Int].unique.transact(t).attempt).unsafeRunSync().toOption must_== None
       tracker.connections.map(_.isClosed) must_== List(true)
     }
 
@@ -76,14 +76,14 @@ class PooledTransactorSpec extends Specification {
     "Connection.close should be called on success" in {
       val tracker = new ConnectionTracker
       val transactor = xa[IO].map(tracker.track[IO](_))
-      transactor.use(t => sql"select 1".query[Int].stream.compile.toList.transact(t)).unsafeRunSync
+      transactor.use(t => sql"select 1".query[Int].stream.compile.toList.transact(t)).unsafeRunSync()
       tracker.connections.map(_.isClosed) must_== List(true)
     }
 
     "Connection.close should be called on failure" in {
       val tracker = new ConnectionTracker
       val transactor = xa[IO].map(tracker.track[IO](_))
-      transactor.use(t => sql"abc".query[Int].stream.compile.toList.transact(t).attempt).unsafeRunSync.toOption must_== None
+      transactor.use(t => sql"abc".query[Int].stream.compile.toList.transact(t).attempt).unsafeRunSync().toOption must_== None
       tracker.connections.map(_.isClosed) must_== List(true)
     }
   }
@@ -105,7 +105,7 @@ class PooledTransactorSpec extends Specification {
         state <- Resource.liftF(p.state)
       } yield state._1
 
-      test.use(_.pure[IO]).unsafeRunSync must_=== 10
+      test.use(_.pure[IO]).unsafeRunSync() must_=== 10
     }
     "Only Allow N connections active at once" in {
       val tracker = new ConnectionTracker
@@ -120,7 +120,7 @@ class PooledTransactorSpec extends Specification {
         state <- Resource.liftF(p.state)
       } yield state._1
 
-      test.use(_.pure[IO]).unsafeRunSync must_=== 2
+      test.use(_.pure[IO]).unsafeRunSync() must_=== 2
     }
   }
 
